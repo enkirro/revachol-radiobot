@@ -70,27 +70,54 @@ apt-get install -y git python3 python3-venv ca-certificates
 Opcional: la rejilla de 90 minutos sigue la zona horaria del sistema
 (`timedatectl set-timezone Europe/Madrid`).
 
-**2. Instalar revachol-radiobot y crear el bot:**
+**2. Descargar el código y revisar el instalador:**
 
 ```bash
 git clone https://github.com/enkirro/revachol-radiobot.git /opt/revachol-radiobot/app
+less /opt/revachol-radiobot/app/deploy/install.sh
+```
+
+`install.sh` se ejecuta como root, así que léelo antes de lanzarlo (como cualquier script que te pidan
+ejecutar con privilegios). Este es todo lo que hace, en orden:
+
+| Paso | Qué hace |
+|---|---|
+| Comprobaciones | Valida el nombre de la cuenta (`--bot`), que se ejecuta como root y que el sistema tiene `apt` y systemd. Si algo falla, se para sin tocar nada |
+| Paquetes del sistema | `apt-get install` de `python3`, `python3-venv`, `python3-pip`, `ca-certificates`, `git` y `sqlite3` |
+| Usuario de servicio | Si no existe, crea el usuario de sistema `revachol-radiobot`: sin contraseña, sin shell (`/usr/sbin/nologin`) y sin carpeta personal |
+| Carpetas | Crea `/opt/revachol-radiobot` (de root) y `/opt/revachol-radiobot/bots` (root, grupo del servicio, `0750`) |
+| Entorno de Python | Crea `/opt/revachol-radiobot/venv` e instala en él este proyecto y sus dependencias desde PyPI (sobre todo `twifork`). Si la versión de `twifork` publicada en PyPI no carga, instala la última de [su repositorio](https://github.com/PawiX25/twifork) |
+| Configuración | Copia las plantillas a `/opt/revachol-radiobot/common.env` y `bots/<cuenta>/bot.env` **solo si no existen**; nunca sobrescribe tu configuración |
+| Carpeta del bot | Crea `bots/<cuenta>/` con dueño `revachol-radiobot` y permisos `0750`. Avisa si falta el dataset |
+| Comando | Copia `deploy/revachol-radiobot-cli.sh` a `/usr/local/bin/revachol-radiobot` |
+| systemd | Copia `revachol-radiobot@.service` y `revachol-radiobot@.timer` a `/etc/systemd/system/` y recarga systemd. **No activa el timer** salvo que pases `--enable` |
+
+No abre puertos ni modifica otros servicios. Aparte de los paquetes de `apt` y del usuario de servicio,
+solo escribe en `/opt/revachol-radiobot`, `/usr/local/bin/revachol-radiobot` y
+`/etc/systemd/system/revachol-radiobot@.*`. Se puede ejecutar
+varias veces: actualiza el código y las unidades sin tocar la configuración, las cookies, el dataset
+ni el estado.
+
+**3. Instalar y crear el bot:**
+
+```bash
 /opt/revachol-radiobot/app/deploy/install.sh --bot discoelysium_es
 ```
 
-**3. Copiar el dataset** (no se incluye en el repositorio, ver [Dataset](#dataset)):
+**4. Copiar el dataset** (no se incluye en el repositorio, ver [Dataset](#dataset)):
 
 ```bash
 install -o revachol-radiobot -g revachol-radiobot -m 0640 dataset.json \
   /opt/revachol-radiobot/bots/discoelysium_es/dataset.json
 ```
 
-**4. Guardar las cookies de la sesión** (ver [Cookies de sesión](#cookies-de-sesión)):
+**5. Guardar las cookies de la sesión** (ver [Cookies de sesión](#cookies-de-sesión)):
 
 ```bash
 revachol-radiobot discoelysium_es cookies set
 ```
 
-**5. Probar y activar:**
+**6. Probar y activar:**
 
 ```bash
 revachol-radiobot discoelysium_es check            # dataset + cookies + sesión de X
@@ -108,7 +135,19 @@ systemctl list-timers 'revachol-radiobot@*'
 cd /opt/revachol-radiobot/app && git pull && ./deploy/install.sh
 ```
 
-No toca la configuración, las cookies, el dataset ni el estado del bot.
+No toca la configuración, las cookies, el dataset ni el estado del bot. Si quieres revisar los cambios
+antes de aplicarlos: `git fetch && git log -p HEAD..origin/main`, y después `git merge && ./deploy/install.sh`.
+
+### Desinstalar
+
+```bash
+systemctl disable --now revachol-radiobot@discoelysium_es.timer
+rm -f /etc/systemd/system/revachol-radiobot@.service /etc/systemd/system/revachol-radiobot@.timer \
+      /usr/local/bin/revachol-radiobot
+systemctl daemon-reload
+userdel revachol-radiobot
+rm -rf /opt/revachol-radiobot    # borra también dataset, cookies y estado
+```
 
 ## Cookies de sesión
 
