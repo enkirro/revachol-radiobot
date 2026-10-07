@@ -1,0 +1,19 @@
+# Plantilla: systemctl enable --now revachol-radiobot@discoelysium_es.timer
+[Unit]
+Description=revachol-radiobot @%i: un tuit cada 90 minutos
+
+[Timer]
+# Rejilla de 90 min: 00:00, 01:30, 03:00, 04:30 ... 22:30 (16 tuits/día).
+OnCalendar=*-*-* 00/3:00:00
+OnCalendar=*-*-* 01/3:30:00
+# Desfase aleatorio distinto en cada ejecución (y entre bots): publicar
+# siempre al segundo exacto es una señal clara de automatización.
+RandomizedDelaySec=10min
+FixedRandomDelay=false
+AccuracySec=1s
+# No recuperar ejecuciones perdidas (evita ráfagas tras un reinicio).
+Persistent=false
+Unit=revachol-radiobot@%i.service
+
+[Install]
+WantedBy=timers.target

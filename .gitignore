@@ -1,0 +1,32 @@
+# Secretos y datos: nunca al repositorio
+.env
+*.env
+!.env.example
+cookies*.json
+*.db
+*.db-wal
+*.db-shm
+*.lock
+*.log
+data/*
+bots/
+!data/dataset.example.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editores / SO
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

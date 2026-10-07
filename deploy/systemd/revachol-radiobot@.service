@@ -1,0 +1,45 @@
+# Plantilla: una instancia por cuenta. %i = arroba sin "@", p. ej.
+#   systemctl start revachol-radiobot@discoelysium_es.service
+[Unit]
+Description=revachol-radiobot @%i: publica una entrada del dataset en X
+Documentation=https://github.com/enkirro/revachol-radiobot
+Wants=network-online.target
+After=network-online.target
+# Sin carpeta ni configuración del bot no hay nada que ejecutar.
+ConditionPathIsDirectory=/opt/revachol-radiobot/bots/%i
+ConditionPathExists=/opt/revachol-radiobot/bots/%i/bot.env
+
+[Service]
+Type=oneshot
+# Usuario de servicio sin shell ni login, dueño de /opt/revachol-radiobot/bots.
+User=revachol-radiobot
+Group=revachol-radiobot
+Environment=RADIOBOT_HOME=/opt/revachol-radiobot/bots/%i
+Environment=RADIOBOT_ACCOUNT=%i
+# Primero lo común a todos los bots (opcional, "-"); bot.env lo sobrescribe.
+EnvironmentFile=-/opt/revachol-radiobot/common.env
+EnvironmentFile=/opt/revachol-radiobot/bots/%i/bot.env
+ExecStart=/opt/revachol-radiobot/venv/bin/revachol-radiobot post
+WorkingDirectory=/opt/revachol-radiobot/bots/%i
+UMask=0077
+# Reintentos (30 s + 120 s) + hilo: de sobra con 20 minutos.
+TimeoutStartSec=20min
+
+# Endurecimiento: todo el sistema es de solo lectura salvo la carpeta de
+# ESTE bot. El código y el venv (/opt/revachol-radiobot/app, /opt/revachol-radiobot/venv)
+# no son modificables por el usuario de servicio.
+ProtectSystem=strict
+ReadWritePaths=/opt/revachol-radiobot/bots/%i
+NoNewPrivileges=yes
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# Dentro de algunos contenedores estas opciones de aislamiento no están
+# disponibles. Si el servicio falla con status=226/NAMESPACE, comenta las
+# líneas Protect*/Private*/ReadWritePaths.

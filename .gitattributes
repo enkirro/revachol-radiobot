@@ -1,0 +1,3 @@
+# Todo en LF, también al clonar en Windows: los .sh y las unidades de systemd
+# dejan de funcionar en Linux si llevan finales de línea CRLF.
+* text=auto eol=lf

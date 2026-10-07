@@ -1,0 +1,14 @@
+[
+  {
+    "actorId": 1,
+    "Languages": "Personaje A",
+    "dialogLong": "Original line in English.",
+    "Translation": "\"Línea traducida que se publicará.\""
+  },
+  {
+    "actorId": 2,
+    "Languages": "Personaje B",
+    "dialogLong": "Another line.",
+    "Translation": "Otra línea, esta vez sin comillas."
+  }
+]
